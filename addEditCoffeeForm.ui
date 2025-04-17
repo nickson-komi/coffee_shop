@@ -175,7 +175,7 @@
       <widget class="QLineEdit" name="LineEdit_size"/>
      </item>
      <item row="6" column="1">
-      <widget class="QPushButton" name="addButton">
+      <widget class="QPushButton" name="resButton">
        <property name="minimumSize">
         <size>
          <width>221</width>
@@ -196,7 +196,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Добавить</string>
+        <string>NONE</string>
        </property>
       </widget>
      </item>
