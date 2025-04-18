@@ -9,20 +9,40 @@ class AddEditCoffe(QMainWindow):
     def __init__(self):
         super().__init__()
         self.connection = sqlite3.connect("coffee.db")
+        self.id = -1
+        self.status = 'add'
         uic.loadUi('addEditCoffeeForm.ui', self)
-        self.resButton.clicked.connect(lambda: self.add_new_data())
+        self.resButton.clicked.connect(lambda: self.change_data(self.status))
 
-    def add_new_data(self):
+    def closeEvent(self, event):
+        self.id = -1
+        self.close()
+        ex.show()
+        print(self.id)
+
+    def change_data(self, prop='add'):
         cur = self.connection.cursor()
-        cur.execute(
-            """INSERT 
-            INTO main(name, roasting, type, description, price, size) 
-            VALUES (?, ?, ?, ?, ?, ?)""", (self.LineEdit_name.text(), self.LineEdit_roasting.text(),
-                                           self.LineEdit_type.text(), self.LineEdit_description.text(),
-                                           float(self.LineEdit_price.text()),
-                                           int(self.LineEdit_size.text()))).fetchall()
+        if prop == 'add':
+            cur.execute("""INSERT 
+                        INTO main(name, roasting, type, description, price, size) 
+                        VALUES (?, ?, ?, ?, ?, ?)""", (self.LineEdit_name.text(), self.LineEdit_roasting.text(),
+                                                       self.LineEdit_type.text(), self.LineEdit_description.text(),
+                                                       float(self.LineEdit_price.text()),
+                                                       int(self.LineEdit_size.text()))).fetchall()
+        else:
+            cur.execute("""
+            UPDATE main
+            SET name = ?, roasting = ?, type = ?, description = ?, price =? , size = ? 
+            WHERE id = ?""", (
+                self.LineEdit_name.text(), self.LineEdit_roasting.text(),
+                self.LineEdit_type.text(), self.LineEdit_description.text(),
+                float(self.LineEdit_price.text()),
+                int(self.LineEdit_size.text()), self.id)
+                        )
+
         self.connection.commit()
         self.close()
+        self.id = -1
         ex.show()
         ex.select_data()
 
@@ -33,8 +53,8 @@ class MyWidget(QMainWindow):
         self.connection = sqlite3.connect("coffee.db")
         uic.loadUi('main.ui', self)
         self.select_data()
-        self.addButton.clicked.connect(lambda: self.addeditwin())
-        self.editButton.clicked.connect(lambda: self.addeditwin('edit'))
+        self.addButton.clicked.connect(lambda: self.addeditwin(property='add'))
+        self.editButton.clicked.connect(lambda: self.addeditwin(property='edit'))
         self.newform = AddEditCoffe()
 
     def select_data(self):
@@ -69,13 +89,50 @@ class MyWidget(QMainWindow):
         else:
             self.statusBar().showMessage('К сожалению, база данных пуста')
 
-    def addeditwin(self, par='add'):
-        if par == 'add':
+    def addeditwin(self, property='add'):
+        self.newform.LineEdit_name.setText('')
+        self.newform.LineEdit_roasting.setText('')
+        self.newform.LineEdit_type.setText('')
+        self.newform.LineEdit_description.setText('')
+        self.newform.LineEdit_price.setText('')
+        self.newform.LineEdit_size.setText('')
+        self.newform.id = self.main_table.currentIndex().row()
+
+        if property == 'add':
+            self.newform.status = 'add'
             self.newform.resButton.setText('Добавить')
+            self.hide()
+            self.newform.show()
         else:
-            self.newform.resButton.setText('Изменить')
-        self.hide()
-        self.newform.show()
+            self.newform.status = 'edit'
+            if self.newform.id == -1:
+                self.statusBar().showMessage(f'Не выбрана строка для редактирования')
+            else:
+                self.newform.id = self.main_table.model().index(self.newform.id, 0).data()
+                self.newform.resButton.setText('Изменить')
+
+                cur = self.connection.cursor()
+                res = cur.execute(
+                    """
+                    SELECT 
+                    id as ID, 
+                    name as Название,
+                    roasting as Обжарка,
+                    type as Типаж,
+                    description as Описание,
+                    price as Цена, 
+                    size as Вес
+                    FROM main
+                    WHERE ID = ?
+                    """, (self.newform.id,)).fetchall()
+                self.newform.LineEdit_name.setText(res[0][1])
+                self.newform.LineEdit_roasting.setText(res[0][2]),
+                self.newform.LineEdit_type.setText(res[0][3])
+                self.newform.LineEdit_description.setText(res[0][4])
+                self.newform.LineEdit_price.setText(str(res[0][5]))
+                self.newform.LineEdit_size.setText(str(int(res[0][6])))
+                self.hide()
+                self.newform.show()
 
     def closeEvent(self, event):
         self.connection.close()
