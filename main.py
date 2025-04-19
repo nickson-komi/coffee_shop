@@ -3,15 +3,16 @@ import sys
 from PyQt6 import uic
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtWidgets import QMainWindow, QTableWidgetItem
+from py_main import Ui_MainWindow
+from  py_addEditCoffeeForm import Ui_addWindow
 
-
-class AddEditCoffe(QMainWindow):
+class AddEditCoffe(QMainWindow, Ui_addWindow):
     def __init__(self):
         super().__init__()
-        self.connection = sqlite3.connect("coffee.db")
+        self.setupUi(self)
+        self.connection = sqlite3.connect("data\\coffee.db")
         self.id = -1
         self.status = 'add'
-        uic.loadUi('addEditCoffeeForm.ui', self)
         self.resButton.clicked.connect(lambda: self.change_data(self.status))
 
     def closeEvent(self, event):
@@ -47,11 +48,11 @@ class AddEditCoffe(QMainWindow):
         ex.select_data()
 
 
-class MyWidget(QMainWindow):
+class MyWidget(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
-        self.connection = sqlite3.connect("coffee.db")
-        uic.loadUi('main.ui', self)
+        self.setupUi(self)
+        self.connection = sqlite3.connect("data\\coffee.db")
         self.select_data()
         self.addButton.clicked.connect(lambda: self.addeditwin(property='add'))
         self.editButton.clicked.connect(lambda: self.addeditwin(property='edit'))
